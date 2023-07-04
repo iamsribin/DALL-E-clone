@@ -6,7 +6,7 @@ function Home() {
   const [allposts, setAllposts] = useState(null);
   const [serchText, setSearchText] = useState("");
 
- const ReanderCards = ({ data, title }) => {
+  const ReanderCards = ({ data, title }) => {
     if (data.leanth > 0) {
       return data.map((post) => <Cart key={post._id} {...post} />);
     }
