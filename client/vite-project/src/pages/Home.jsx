@@ -1,21 +1,61 @@
 import React, { useEffect, useState } from "react";
 import { Cart, FormFiled, Loader } from "../components/";
 
-function Home() {
-  const [loading, setLoading] = useState(false);
-  const [allposts, setAllposts] = useState(null);
-  const [serchText, setSearchText] = useState("");
-
-  const ReanderCards = ({ data, title }) => {
-    if (data.leanth > 0) {
-      return data.map((post) => <Cart key={post._id} {...post} />);
-    }
+const ReanderCards = ({ data, title }) => {
+  if (data?.length > 0) {
+    return data.map((post) => <Cart key={post._id} {...post} />);
+  } else {
     return (
       <h2 className="mt-5 font-bold text-[#6949ff] text-xl uppercase">
         {title}
       </h2>
     );
+  }
+};
+
+function Home() {
+  const [loading, setLoading] = useState(false);
+  const [allposts, setAllposts] = useState(null);
+  const [searchText, setSearchText] = useState("");
+  const [searchedResults, setSearchedResults] = useState(null);
+  const [searchTimeout, setsearchTimeout] = useState(null);
+
+  useEffect(() => {
+    const fetchPost = async () => {
+      setLoading(true);
+      try {
+        const response = fetch("http://localhost:8080/api/v1/post", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (response.ok) {
+          const result = await response.json();
+          setAllposts(result.data.reverse());
+        }
+      } catch (error) {
+        alert(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPost();
+  }, []);
+
+  const handleSerchChange = (e) => {
+    clearTimeout(searchTimeout);
+    setSearchText(e.target.value);
+    setsearchTimeout(
+      setTimeout(() => {
+        const searchResults = allposts.filter(
+          (item) =>
+            item.name.toLowerCase().includes(searchText.toLowerCase()) ||
+            item.prompt.toLowerCase().includes(searchText.toLowerCase())
+        );
+        setSearchedResults(searchResults);
+      }, 500)
+    );
   };
+
   return (
     <section className="max-w-7xl mx-auto">
       <div>
@@ -29,7 +69,14 @@ function Home() {
       </div>
 
       <div className="mt-16">
-        <FormFiled />
+        <FormFiled
+          labelName="Search posts"
+          type="text"
+          name="text"
+          placeholder="Search posts"
+          value={searchText}
+          handleChange={handleSerchChange}
+        />
       </div>
 
       <div className="mt-16">
@@ -39,17 +86,20 @@ function Home() {
           </div>
         ) : (
           <>
-            {serchText && (
+            {searchText && (
               <h2 className="font-medium text-[666e75] text-xl mb-3 ">
                 showing results{" "}
-                <span className="text-[222328] ">{serchText}</span>
+                <span className="text-[222328] ">{searchText}</span>
               </h2>
             )}
             <div className="grid lg:grid-cols-4 sm:grid-cols-3 xs:grid-cols-2 grid-cols-1 gap-3">
-              {serchText ? (
-                <ReanderCards data={[]} title="No search result found" />
+              {searchText ? (
+                <ReanderCards
+                  data={searchedResults}
+                  title="No search result found"
+                />
               ) : (
-                <ReanderCards data={[]} title="No post found" />
+                <ReanderCards data={allposts} title="No post found" />
               )}
             </div>
           </>

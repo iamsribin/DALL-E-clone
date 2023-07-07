@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { json, useNavigate } from "react-router-dom";
 
 import { preview } from "../assets";
 import { getRandomPrompt } from "../utils";
@@ -15,23 +15,63 @@ function CreatPost() {
   const [generatingImg, setGanaratingImg] = useState(false);
   const [loding, setLoding] = useState(false);
 
-  const handleSubmit = () => {};
+  const handleSubmit = async(e) => {
+    e.preventDefult();
+    if(form.prompt && form.photo){
+      setLoding(true)
+      try {
+        const response  = fetch('http://localhost:8080/api/v1/post',{
+          method:'POST',
+          headers:{
+            'Content-Type': 'application/json'
+          },
+          body:JSON.stringify(form)
+
+        })
+        await response.json()
+        navigate('/')
+      } catch (error) {
+        alert(error)
+      }finally{
+        setLoding(false)
+      }
+    }else{
+      alert('please enter a prompt and ganarate an image')
+    }
+  };
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
+
   const handleSurpriseMe = () => {
     const randomPrompt = getRandomPrompt(form.prompt);
     setForm({ ...form, prompt: randomPrompt });
   };
-  const generateImage = () => {
-    if (form.prompt){
+
+  const generateImage = async () => {
+    if (form.prompt) {
       try {
-        
+        setGanaratingImg(true);
+        const repnose = await fetch("http://localhost:8080/api/v1/dalle", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: form.prompt }),
+        });
+        const data = await repnose.json();
+
+        setForm({ ...form, photo: `data:image/jpeg;base64,${data.photo}` });
       } catch (error) {
-        
+        alert("you're out of credits!");
+        console.log(error);
+      } finally {
+        setGanaratingImg(false);
       }
+    } else {
+      alert("please enter prompt");
     }
   };
+
   return (
     <section className="max-w-7xl mx-auto">
       <div>
